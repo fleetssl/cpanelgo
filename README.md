@@ -1,5 +1,9 @@
 # cPanel api in Go
 
+[![GoDoc](https://godoc.org/github.com/letsencrypt-cpanel/cpanelgo?status.svg)](https://godoc.org/github.com/letsencrypt-cpanel/cpanelgo)
+
+## About
+
 This is a simple cPanel api written in go.
 
 Currently four intefaces are implemented,
