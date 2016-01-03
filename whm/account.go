@@ -1,10 +1,6 @@
 package whm
 
-import (
-	"net/url"
-
-	"github.com/letsencrypt-cpanel/cpanelgo"
-)
+import "github.com/letsencrypt-cpanel/cpanelgo"
 
 type ListAccountsApiResponse struct {
 	BaseWhmApiResponse
@@ -17,9 +13,6 @@ type ListAccountsApiResponse struct {
 
 func (a WhmApi) ListAccounts() (ListAccountsApiResponse, error) {
 	var out ListAccountsApiResponse
-
-	v := url.Values{}
-	v.Add("cpanelgo.version", "1")
 
 	err := a.WHMAPI1("listaccts", cpanelgo.Args{}, &out)
 	if err == nil {

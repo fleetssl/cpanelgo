@@ -3,6 +3,8 @@ package cpanelgo
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"net/url"
 	"strings"
 )
 
@@ -12,13 +14,13 @@ const (
 )
 
 type UAPIResult struct {
-	// bit of other junk in here too
-	// eg: "apiversion":3,"func":"get_theme_base","module":"Themes"
-	Result json.RawMessage `json:"result"`
+	ApiVersion int             `json:"apiversion"`
+	Func       string          `json:"func"`
+	Module     string          `json:"module"`
+	Result     json.RawMessage `json:"result"`
 }
 
 type API2Result struct {
-	// nothing else returned with this
 	Result json.RawMessage `json:"cpanelresult"`
 }
 
@@ -70,7 +72,7 @@ type BaseAPI1Response struct {
 	ErrorString string `json:"error"`
 	// "event":{"result":1,"reason":"blah blah"}}
 	Event struct {
-		Result int `json:"result"`
+		Result int    `json:"result"`
 		Reason string `json:"reason"`
 	} `json:"event"`
 }
@@ -90,6 +92,23 @@ func (r BaseAPI1Response) Error() error {
 }
 
 type Args map[string]interface{}
+
+func (a Args) Values(apiVersion string) (url.Values) {
+	vals := url.Values{}
+	for k, v := range a {
+		if apiVersion == "1" {
+			kv := strings.SplitN(k, "=", 2)
+			if len(kv) == 1 {
+				vals.Add(kv[0], "")
+			} else if len(kv) == 2 {
+				vals.Add(kv[0], kv[1])
+			}
+		} else {
+			vals.Add(k, fmt.Sprintf("%v", v))
+		}
+	}
+	return vals
+}
 
 type ApiGateway interface {
 	UAPI(module, function string, arguments Args, out interface{}) error

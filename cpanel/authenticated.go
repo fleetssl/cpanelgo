@@ -9,9 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
-	"strings"
 
 	"github.com/letsencrypt-cpanel/cpanelgo"
 )
@@ -82,27 +80,8 @@ func (c *AuthenticatedLiveApiGateway) Close() error {
 	return nil
 }
 
-func args2vals(req LiveApiRequest) url.Values {
-	vals := url.Values{}
-	if req.Arguments != nil && len(req.Arguments) > 0 {
-		for k, v := range req.Arguments {
-			if req.ApiVersion == "1" {
-				kv := strings.SplitN(k, "=", 2)
-				if len(kv) == 1 {
-					vals.Add(kv[0], "")
-				} else if len(kv) == 2 {
-					vals.Add(kv[0], kv[1])
-				}
-			} else {
-				vals.Add(k, fmt.Sprintf("%v", v))
-			}
-		}
-	}
-	return vals
-}
-
 func (c *AuthenticatedLiveApiGateway) api(req LiveApiRequest, out interface{}) error {
-	vals := args2vals(req)
+	vals := req.Arguments.Values(req.ApiVersion)
 	reqUrl := fmt.Sprintf("https://%s:2083/", c.Hostname)
 	switch req.ApiVersion {
 	case "uapi":

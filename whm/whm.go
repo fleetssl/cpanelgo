@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -72,26 +71,13 @@ func NewWhmApi(hostname, username, accessHash string, insecure bool) WhmApi {
 }
 
 func (c *WhmApi) WHMAPI1(function string, arguments cpanelgo.Args, out interface{}) error {
-	vals := url.Values{
-		"api.version": []string{"1"},
-	}
 
-	if arguments != nil && len(arguments) > 0 {
-		for k, v := range arguments {
-			if ver, ok := arguments["cpanel_jsonapi_apiversion"]; ok {
-				if ver == "1" {
-					kv := strings.SplitN(k, "=", 2)
-					if len(kv) == 1 {
-						vals.Add(kv[0], "")
-					} else if len(kv) == 2 {
-						vals.Add(kv[0], kv[1])
-					}
-					continue
-				}
-			}
-			vals.Add(k, fmt.Sprintf("%v", v))
-		}
+	version := "0"
+	if arguments["cpanel_jsonapi_apiversion"] == "1" {
+		version = "1"
 	}
+	vals := arguments.Values(version)
+	vals.Set("api.version", "1")
 
 	reqUrl := fmt.Sprintf("https://%s:2087/json-api/%s?%s", c.Hostname, function, vals.Encode())
 	req, err := http.NewRequest("GET", reqUrl, nil)
