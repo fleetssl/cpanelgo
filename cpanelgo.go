@@ -13,18 +13,29 @@ const (
 	ResponseSizeLimit = (5 * megabyte) + 1337
 )
 
+type BaseResult struct {
+	ErrorString string `json:"error"`
+}
+
+func (r BaseResult) Error() error {
+	if r.ErrorString == "" {
+		return nil
+	}
+	return errors.New(r.ErrorString)
+}
+
 type UAPIResult struct {
-	ApiVersion int             `json:"apiversion"`
-	Func       string          `json:"func"`
-	Module     string          `json:"module"`
+	BaseResult
 	Result     json.RawMessage `json:"result"`
 }
 
 type API2Result struct {
+	BaseResult
 	Result json.RawMessage `json:"cpanelresult"`
 }
 
 type BaseUAPIResponse struct {
+	BaseResult
 	StatusCode int      `json:"status"`
 	Errors     []string `json:"errors"`
 	Messages   []string `json:"messages"`
@@ -33,6 +44,10 @@ type BaseUAPIResponse struct {
 func (r BaseUAPIResponse) Error() error {
 	if r.StatusCode == 1 {
 		return nil
+	}
+	err := r.BaseResult.Error()
+	if err != nil {
+		return err
 	}
 	if len(r.Errors) == 0 {
 		return errors.New("Unknown")
@@ -48,6 +63,7 @@ func (r BaseUAPIResponse) Message() error {
 }
 
 type BaseAPI2Response struct {
+	BaseResult
 	Event struct {
 		Result int    `json:"result"`
 		Reason string `json:"reason"`
@@ -57,6 +73,10 @@ type BaseAPI2Response struct {
 func (r BaseAPI2Response) Error() error {
 	if r.Event.Result == 1 {
 		return nil
+	}
+	err := r.BaseResult.Error()
+	if err != nil {
+		return err
 	}
 	if len(r.Event.Reason) == 0 {
 		return errors.New("Unknown")

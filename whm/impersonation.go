@@ -38,6 +38,9 @@ func (c *WhmImpersonationApi) UAPI(module, function string, arguments cpanelgo.A
 
 	var result cpanelgo.UAPIResult
 	err := c.WHMAPI1("cpanel", arguments, &result)
+	if err == nil {
+		err = result.Error()
+	}
 	if err != nil {
 		return err
 	}
@@ -52,6 +55,9 @@ func (c *WhmImpersonationApi) API2(module, function string, arguments cpanelgo.A
 
 	var result cpanelgo.API2Result
 	err := c.WHMAPI1("cpanel", arguments, &result)
+	if err == nil {
+		err = result.Error()
+	}
 	if err != nil {
 		return err
 	}

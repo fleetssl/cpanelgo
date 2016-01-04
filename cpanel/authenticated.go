@@ -53,6 +53,9 @@ func (c *AuthenticatedLiveApiGateway) API2(module, function string, arguments cp
 
 	var result cpanelgo.API2Result
 	err := c.api(req, &result)
+	if err == nil {
+		err = result.Error()
+	}
 	if err != nil {
 		return err
 	}

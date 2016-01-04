@@ -179,17 +179,33 @@ func api(cl cpanel.LiveApi) {
 	case "uapi":
 		err := cl.Gateway.UAPI(module, function, getArgs(), &out)
 		ifpanic(err)
+		printResult(out)
+		var response cpanelgo.BaseUAPIResponse
+		err = json.Unmarshal(out, &response)
+		ifpanic(err)
+		ifpanic(response.Error())
+		fmt.Printf("%+v", response)
 	case "2":
 		err := cl.Gateway.API2(module, function, getArgs(), &out)
 		ifpanic(err)
+		printResult(out)
+		var response cpanelgo.BaseAPI2Response
+		err = json.Unmarshal(out, &response)
+		ifpanic(err)
+		ifpanic(response.Error())
+		fmt.Printf("%+v", response)
 	case "1":
 		err := cl.Gateway.API1(module, function, flag.Args(), &out)
 		ifpanic(err)
+		printResult(out)
+		var response cpanelgo.BaseAPI1Response
+		err = json.Unmarshal(out, &response)
+		ifpanic(err)
+		ifpanic(response.Error())
+		fmt.Printf("%+v", response)
 	default:
-		log.Fatal("Unknown version: %s", version)
+		log.Fatal("Unknown version: %q, expected uapi, 2 or 1", version)
 	}
-
-	printResult(out)
 }
 
 func modeWhm() {

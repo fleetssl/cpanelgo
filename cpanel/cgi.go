@@ -86,6 +86,9 @@ func (c *CgiLiveApiGateway) api(req LiveApiRequest, out interface{}) error {
 	case "uapi":
 		var result cpanelgo.UAPIResult
 		err := c.exec("<cpanelaction>"+string(buf)+"</cpanelaction>", &result)
+		if err == nil {
+			err = result.Error()
+		}
 		if err != nil {
 			return err
 		}
@@ -93,6 +96,9 @@ func (c *CgiLiveApiGateway) api(req LiveApiRequest, out interface{}) error {
 	case "2":
 		var result cpanelgo.API2Result
 		err := c.exec("<cpanelaction>"+string(buf)+"</cpanelaction>", &result)
+		if err == nil {
+			err = result.Error()
+		}
 		if err != nil {
 			return err
 		}
