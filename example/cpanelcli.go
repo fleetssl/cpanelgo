@@ -33,12 +33,12 @@ func init() {
 		cmd := filepath.Base(os.Args[0])
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n\n", cmd)
 		fmt.Fprintf(os.Stderr, "cPanel example:\n")
-		fmt.Fprintf(os.Stderr, "# %s -mode cpanel -host 127.0.0.1 -username test -password test -version uapi -module Themes -function get_theme_base\n", cmd)
+		fmt.Fprintf(os.Stderr, "# %s -mode cpanel -hostname 127.0.0.1 -username test -password test -version uapi -module Themes -function get_theme_base\n", cmd)
 		fmt.Fprintf(os.Stderr, "\tIf password isn't specified, will be prompted\n\n")
 		fmt.Fprintf(os.Stderr, "WHM impersonation example:\n")
-		fmt.Fprintf(os.Stderr, "# %s -mode whmimp -host 127.0.0.1 -username root -impersonate test -accesshash .accesshash -version uapi -module Themes -function get_theme_base\n\n", cmd)
+		fmt.Fprintf(os.Stderr, "# %s -mode whmimp -hostname 127.0.0.1 -username root -impersonate test -accesshash .accesshash -version uapi -module Themes -function get_theme_base\n\n", cmd)
 		fmt.Fprintf(os.Stderr, "WHM example:\n")
-		fmt.Fprintf(os.Stderr, "# %s -mode whm -host 127.0.0.1 -username root -accesshash .accesshash -function listaccts\n\n", cmd)
+		fmt.Fprintf(os.Stderr, "# %s -mode whm -hostname 127.0.0.1 -username root -accesshash .accesshash -function listaccts\n\n", cmd)
 		fmt.Fprintf(os.Stderr, "To show extra debug use -debug and to pretty print json result use -pretty\n")
 	}
 
@@ -54,8 +54,8 @@ func init() {
 	flag.StringVar(&password, "password", "", "password for cpanel")
 
 	// flags for cpanel/whm/whmimp
-	flag.StringVar(&hostname, "host", "", "hostname to connect to")
-	flag.StringVar(&username, "user", "", "username to authenticate")
+	flag.StringVar(&hostname, "hostname", "", "hostname to connect to")
+	flag.StringVar(&username, "username", "", "username to authenticate")
 
 	// flags for whm/whmimp
 	flag.StringVar(&accesshash, "accesshash", "", "access hash file path for whm/whmimp")
