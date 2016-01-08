@@ -22,7 +22,12 @@ type FetchServiceSslComponentsAPIResponse struct {
 	BaseWhmApiResponse
 	Data struct {
 		Services []struct {
-			Service string `json:"service"`
+			Service         string `json:"service"`
+			Certificate     string `json:"certificate"`
+			CertificateInfo struct {
+				IsSelfSigned int   `json:"is_self_signed"`
+				NotAfter     int64 `json:"not_after"`
+			} `json:"certificate_info"`
 		} `json:"services"`
 	} `json:"data"`
 }
