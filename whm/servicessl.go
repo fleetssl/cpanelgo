@@ -50,3 +50,16 @@ func (a WhmApi) FetchServiceSslComponents() (FetchServiceSslComponentsAPIRespons
 
 	return out, err
 }
+
+func (a WhmApi) RestartService(name string) (BaseWhmApiResponse, error) {
+	var out BaseWhmApiResponse
+
+	err := a.WHMAPI1("restartservice", cpanelgo.Args{
+		"service": name,
+	}, &out)
+	if err == nil {
+		err = out.Error()
+	}
+
+	return out, err
+}
