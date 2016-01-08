@@ -24,6 +24,7 @@ type FetchServiceSslComponentsAPIResponse struct {
 		Services []struct {
 			Service         string `json:"service"`
 			Certificate     string `json:"certificate"`
+			CABundle        string `json:"cabundle"`
 			CertificateInfo struct {
 				IsSelfSigned int   `json:"is_self_signed"`
 				NotAfter     int64 `json:"not_after"`
