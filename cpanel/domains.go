@@ -26,7 +26,13 @@ type DomainsDataApiResponse struct {
 	} `json:"data"`
 }
 
-func (r DomainsDataApiResponse) Domains() []string {
+func (dd DomainsDataApiResponse) DataList() []DomainsDataDomain {
+	doms := append(dd.Data.AddonDomains, dd.Data.MainDomain)
+	doms = append(doms, dd.Data.Subdomains...)
+	return doms
+}
+
+func (r DomainsDataApiResponse) DomainList() []string {
 	out := []string{}
 	out = append(out, r.Data.MainDomain.Domain)
 	out = append(out, r.Data.ParkedDomains...)
