@@ -12,7 +12,7 @@ type GetDomAPIResponse struct {
 	} `json:"data"`
 }
 
-func (c LiveApi) GetDom(pageTitle string) (GetDomAPIResponse, error) {
+func (c CpanelApi) GetDom(pageTitle string) (GetDomAPIResponse, error) {
 	var out GetDomAPIResponse
 	err := c.Gateway.UAPI("Chrome", "get_dom", cpanelgo.Args{
 		"page_title": pageTitle,

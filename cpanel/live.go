@@ -13,28 +13,28 @@ import (
 	"github.com/letsencrypt-cpanel/cpanelgo"
 )
 
-type CgiLiveApiGateway struct {
+type LiveApiGateway struct {
 	net.Conn
 }
 
-func NewCgiLiveApi(network, address string) (LiveApi, error) {
-	c := &CgiLiveApiGateway{}
+func NewLiveApi(network, address string) (CpanelApi, error) {
+	c := &LiveApiGateway{}
 
 	conn, err := net.Dial(network, address)
 	if err != nil {
-		return LiveApi{}, err
+		return CpanelApi{}, err
 	}
 	c.Conn = conn
 
 	if err := c.exec(`<cpaneljson enable="1">`, nil); err != nil {
-		return LiveApi{}, fmt.Errorf("Enabling JSON: %v", err)
+		return CpanelApi{}, fmt.Errorf("Enabling JSON: %v", err)
 	}
 
-	return LiveApi{cpanelgo.NewApi(c)}, nil
+	return CpanelApi{cpanelgo.NewApi(c)}, nil
 }
 
-func (c *CgiLiveApiGateway) UAPI(module, function string, arguments cpanelgo.Args, out interface{}) error {
-	req := LiveApiRequest{
+func (c *LiveApiGateway) UAPI(module, function string, arguments cpanelgo.Args, out interface{}) error {
+	req := CpanelApiRequest{
 		RequestType: "exec",
 		ApiVersion:  "uapi",
 		Module:      module,
@@ -45,8 +45,8 @@ func (c *CgiLiveApiGateway) UAPI(module, function string, arguments cpanelgo.Arg
 	return c.api(req, out)
 }
 
-func (c *CgiLiveApiGateway) API2(module, function string, arguments cpanelgo.Args, out interface{}) error {
-	req := LiveApiRequest{
+func (c *LiveApiGateway) API2(module, function string, arguments cpanelgo.Args, out interface{}) error {
+	req := CpanelApiRequest{
 		RequestType: "exec",
 		ApiVersion:  "2",
 		Module:      module,
@@ -57,7 +57,7 @@ func (c *CgiLiveApiGateway) API2(module, function string, arguments cpanelgo.Arg
 	return c.api(req, out)
 }
 
-func (c *CgiLiveApiGateway) API1(module, function string, arguments []string, out interface{}) error {
+func (c *LiveApiGateway) API1(module, function string, arguments []string, out interface{}) error {
 	req := map[string]interface{}{
 		"module":     module,
 		"reqtype":    "exec",
@@ -73,11 +73,11 @@ func (c *CgiLiveApiGateway) API1(module, function string, arguments []string, ou
 	return c.exec("<cpanelaction>"+string(bytes)+"</cpanelaction>", out)
 }
 
-func (c *CgiLiveApiGateway) Close() error {
+func (c *LiveApiGateway) Close() error {
 	return c.Conn.Close()
 }
 
-func (c *CgiLiveApiGateway) api(req LiveApiRequest, out interface{}) error {
+func (c *LiveApiGateway) api(req CpanelApiRequest, out interface{}) error {
 	buf, err := json.Marshal(req)
 	if err != nil {
 		return err
@@ -123,7 +123,7 @@ func endsWith(where []byte, what string) bool {
 	return true
 }
 
-func (c *CgiLiveApiGateway) exec(req string, out interface{}) error {
+func (c *LiveApiGateway) exec(req string, out interface{}) error {
 	if _, err := fmt.Fprintf(c, "%d\n%s", len(req), req); err != nil {
 		return err
 	}

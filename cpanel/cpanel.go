@@ -2,11 +2,11 @@ package cpanel
 
 import "github.com/letsencrypt-cpanel/cpanelgo"
 
-type LiveApi struct {
+type CpanelApi struct {
 	cpanelgo.Api
 }
 
-type LiveApiRequest struct {
+type CpanelApiRequest struct {
 	Module      string        `json:"module"`
 	RequestType string        `json:"reqtype"`
 	Function    string        `json:"func"`

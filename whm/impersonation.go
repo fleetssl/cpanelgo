@@ -14,11 +14,11 @@ type WhmImpersonationApi struct {
 	WhmApi
 }
 
-func NewWhmImpersonationApi(hostname, username, accessHash, userToImpersonate string, insecure bool) cpanel.LiveApi {
+func NewWhmImpersonationApi(hostname, username, accessHash, userToImpersonate string, insecure bool) cpanel.CpanelApi {
 	accessHash = strings.Replace(accessHash, "\n", "", -1)
 	accessHash = strings.Replace(accessHash, "\r", "", -1)
 
-	return cpanel.LiveApi{cpanelgo.NewApi(
+	return cpanel.CpanelApi{cpanelgo.NewApi(
 		&WhmImpersonationApi{
 			Impersonate: userToImpersonate,
 			WhmApi: WhmApi{

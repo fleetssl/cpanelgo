@@ -45,7 +45,7 @@ func (r DomainsDataApiResponse) DomainList() []string {
 	return out
 }
 
-func (c LiveApi) DomainsData() (DomainsDataApiResponse, error) {
+func (c CpanelApi) DomainsData() (DomainsDataApiResponse, error) {
 	var out DomainsDataApiResponse
 
 	err := c.Gateway.UAPI("DomainInfo", "domains_data", cpanelgo.Args{
@@ -65,7 +65,7 @@ type SingleDomainDataApiResponse struct {
 	} `json:"data"`
 }
 
-func (c LiveApi) SingleDomainData(domain string) (SingleDomainDataApiResponse, error) {
+func (c CpanelApi) SingleDomainData(domain string) (SingleDomainDataApiResponse, error) {
 	var out SingleDomainDataApiResponse
 
 	err := c.Gateway.UAPI("DomainInfo", "single_domain_data", cpanelgo.Args{
@@ -86,7 +86,7 @@ type ListParkedDomainsApiResponse struct {
 	Data []ParkedDomain `json:"data"`
 }
 
-func (c LiveApi) ListParkedDomains() (ListParkedDomainsApiResponse, error) {
+func (c CpanelApi) ListParkedDomains() (ListParkedDomainsApiResponse, error) {
 	var out ListParkedDomainsApiResponse
 
 	err := c.Gateway.API2("Park", "listparkeddomains", cpanelgo.Args{}, &out)

@@ -14,26 +14,26 @@ import (
 	"github.com/letsencrypt-cpanel/cpanelgo"
 )
 
-type AuthenticatedLiveApiGateway struct {
+type JsonApiGateway struct {
 	Hostname string
 	Username string
 	Password string
 	Insecure bool
 }
 
-func NewAuthenticatedLiveApi(hostname, username, password string, insecure bool) (LiveApi, error) {
-	c := &AuthenticatedLiveApiGateway{
+func NewJsonApi(hostname, username, password string, insecure bool) (CpanelApi, error) {
+	c := &JsonApiGateway{
 		Hostname: hostname,
 		Username: username,
 		Password: password,
 		Insecure: insecure,
 	}
 	// todo: a way to check the username/password here
-	return LiveApi{cpanelgo.NewApi(c)}, nil
+	return CpanelApi{cpanelgo.NewApi(c)}, nil
 }
 
-func (c *AuthenticatedLiveApiGateway) UAPI(module, function string, arguments cpanelgo.Args, out interface{}) error {
-	req := LiveApiRequest{
+func (c *JsonApiGateway) UAPI(module, function string, arguments cpanelgo.Args, out interface{}) error {
+	req := CpanelApiRequest{
 		ApiVersion: "uapi",
 		Module:     module,
 		Function:   function,
@@ -43,8 +43,8 @@ func (c *AuthenticatedLiveApiGateway) UAPI(module, function string, arguments cp
 	return c.api(req, out)
 }
 
-func (c *AuthenticatedLiveApiGateway) API2(module, function string, arguments cpanelgo.Args, out interface{}) error {
-	req := LiveApiRequest{
+func (c *JsonApiGateway) API2(module, function string, arguments cpanelgo.Args, out interface{}) error {
+	req := CpanelApiRequest{
 		ApiVersion: "2",
 		Module:     module,
 		Function:   function,
@@ -63,13 +63,13 @@ func (c *AuthenticatedLiveApiGateway) API2(module, function string, arguments cp
 	return json.Unmarshal(result.Result, out)
 }
 
-func (c *AuthenticatedLiveApiGateway) API1(module, function string, arguments []string, out interface{}) error {
+func (c *JsonApiGateway) API1(module, function string, arguments []string, out interface{}) error {
 	args := cpanelgo.Args{}
 	for _, v := range arguments {
 		args[v] = true
 	}
 
-	req := LiveApiRequest{
+	req := CpanelApiRequest{
 		ApiVersion: "1",
 		Module:     module,
 		Function:   function,
@@ -79,11 +79,11 @@ func (c *AuthenticatedLiveApiGateway) API1(module, function string, arguments []
 	return c.api(req, out)
 }
 
-func (c *AuthenticatedLiveApiGateway) Close() error {
+func (c *JsonApiGateway) Close() error {
 	return nil
 }
 
-func (c *AuthenticatedLiveApiGateway) api(req LiveApiRequest, out interface{}) error {
+func (c *JsonApiGateway) api(req CpanelApiRequest, out interface{}) error {
 	vals := req.Arguments.Values(req.ApiVersion)
 	reqUrl := fmt.Sprintf("https://%s:2083/", c.Hostname)
 	switch req.ApiVersion {

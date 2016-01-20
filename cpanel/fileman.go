@@ -11,7 +11,7 @@ type MkdirApiResponse struct {
 	} `json:"data"`
 }
 
-func (c LiveApi) Mkdir(name, permissions, path string) (MkdirApiResponse, error) {
+func (c CpanelApi) Mkdir(name, permissions, path string) (MkdirApiResponse, error) {
 	var out MkdirApiResponse
 	err := c.Gateway.API2("Fileman", "mkdir", cpanelgo.Args{
 		"path":        path,
@@ -32,7 +32,7 @@ type UploadFilesApiResponse struct {
 	} `json:"data"`
 }
 
-func (c LiveApi) UploadFiles(name, contents, dir string) error {
+func (c CpanelApi) UploadFiles(name, contents, dir string) error {
 	var out UploadFilesApiResponse
 	err := c.Gateway.UAPI("Fileman", "upload_files", cpanelgo.Args{
 		"dir":         dir,

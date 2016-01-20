@@ -20,7 +20,7 @@ type FetchZoneApiResponse struct {
 	} `json:"data"`
 }
 
-func (c LiveApi) FetchZone(domain, types string) (FetchZoneApiResponse, error) {
+func (c CpanelApi) FetchZone(domain, types string) (FetchZoneApiResponse, error) {
 	var out FetchZoneApiResponse
 
 	err := c.Gateway.API2("ZoneEdit", "fetchzone", cpanelgo.Args{

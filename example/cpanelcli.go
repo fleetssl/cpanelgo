@@ -130,7 +130,7 @@ func modeCpanel() {
 	required(password, "Please specify a password")
 	required(version, "Please specify an api version")
 
-	cl, err := cpanel.NewAuthenticatedLiveApi(hostname, username, password, insecure)
+	cl, err := cpanel.NewJsonApi(hostname, username, password, insecure)
 	ifpanic(err)
 
 	/*
@@ -173,7 +173,7 @@ func modeWhmImp() {
 	api(cl)
 }
 
-func api(cl cpanel.LiveApi) {
+func api(cl cpanel.CpanelApi) {
 	var out json.RawMessage
 	switch version {
 	case "uapi":

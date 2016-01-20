@@ -35,7 +35,7 @@ type NVDataGetApiResult struct {
 	} `json:"data"`
 }
 
-func (c LiveApi) GetNVData() (*NVDataAccount, error) {
+func (c CpanelApi) GetNVData() (*NVDataAccount, error) {
 	var out NVDataGetApiResult
 	err := c.Gateway.UAPI("NVData", "get", cpanelgo.Args{
 		"names": NVDatastoreName,
@@ -63,7 +63,7 @@ func (c LiveApi) GetNVData() (*NVDataAccount, error) {
 }
 
 
-func (c LiveApi) SetNVData(data *NVDataAccount) (cpanelgo.BaseAPI2Response, error) {
+func (c CpanelApi) SetNVData(data *NVDataAccount) (cpanelgo.BaseAPI2Response, error) {
 	var out cpanelgo.BaseAPI2Response
 
 	buf, err := json.Marshal(data)

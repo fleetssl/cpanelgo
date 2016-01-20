@@ -18,7 +18,7 @@ type ListSSLKeysAPIResponse struct {
 	} `json:"data"`
 }
 
-func (c LiveApi) ListSSLKeys() (ListSSLKeysAPIResponse, error) {
+func (c CpanelApi) ListSSLKeys() (ListSSLKeysAPIResponse, error) {
 	var out ListSSLKeysAPIResponse
 	err := c.Gateway.UAPI("SSL", "list_keys", nil, &out)
 	if err == nil {
@@ -51,7 +51,7 @@ func (r InstalledHostsApiResponse) HasDomain(d string) bool {
 	return false
 }
 
-func (c LiveApi) InstalledHosts() (InstalledHostsApiResponse, error) {
+func (c CpanelApi) InstalledHosts() (InstalledHostsApiResponse, error) {
 	var out InstalledHostsApiResponse
 	err := c.Gateway.UAPI("SSL", "installed_hosts", nil, &out)
 	return out, err
@@ -69,7 +69,7 @@ type GenerateSSLKeyAPIResponse struct {
 	} `json:"data"`
 }
 
-func (c LiveApi) GenerateSSLKey(keySize int, friendlyName string) (GenerateSSLKeyAPIResponse, error) {
+func (c CpanelApi) GenerateSSLKey(keySize int, friendlyName string) (GenerateSSLKeyAPIResponse, error) {
 	var out GenerateSSLKeyAPIResponse
 	err := c.Gateway.UAPI("SSL", "generate_key", cpanelgo.Args{
 		"key_size":      strconv.Itoa(keySize),
@@ -99,7 +99,7 @@ type InstallSSLKeyAPIResponse struct {
 	} `json:"data"`
 }
 
-func (c LiveApi) InstallSSLKey(domain string, cert string, key string, cabundle string) (InstallSSLKeyAPIResponse, error) {
+func (c CpanelApi) InstallSSLKey(domain string, cert string, key string, cabundle string) (InstallSSLKeyAPIResponse, error) {
 	var out InstallSSLKeyAPIResponse
 	err := c.Gateway.UAPI("SSL", "install_ssl", cpanelgo.Args{
 		"domain":   domain,
@@ -113,7 +113,7 @@ func (c LiveApi) InstallSSLKey(domain string, cert string, key string, cabundle 
 	return out, err
 }
 
-func (c LiveApi) DeleteSSL(domain string) (cpanelgo.BaseUAPIResponse, error) {
+func (c CpanelApi) DeleteSSL(domain string) (cpanelgo.BaseUAPIResponse, error) {
 	var out cpanelgo.BaseUAPIResponse
 	err := c.Gateway.UAPI("SSL", "delete_ssl", cpanelgo.Args{
 		"domain": domain,
@@ -124,7 +124,7 @@ func (c LiveApi) DeleteSSL(domain string) (cpanelgo.BaseUAPIResponse, error) {
 	return out, err
 }
 
-func (c LiveApi) DeleteCert(certId string) (cpanelgo.BaseUAPIResponse, error) {
+func (c CpanelApi) DeleteCert(certId string) (cpanelgo.BaseUAPIResponse, error) {
 	var out cpanelgo.BaseUAPIResponse
 	err := c.Gateway.UAPI("SSL", "delete_cert", cpanelgo.Args{
 		"id": certId,
@@ -135,7 +135,7 @@ func (c LiveApi) DeleteCert(certId string) (cpanelgo.BaseUAPIResponse, error) {
 	return out, err
 }
 
-func (c LiveApi) DeleteKey(certId string) (cpanelgo.BaseUAPIResponse, error) {
+func (c CpanelApi) DeleteKey(certId string) (cpanelgo.BaseUAPIResponse, error) {
 	var out cpanelgo.BaseUAPIResponse
 	err := c.Gateway.UAPI("SSL", "delete_key", cpanelgo.Args{
 		"id": certId,
@@ -154,7 +154,7 @@ type EnableMailSNIAPIResponse struct {
 	} `json:"data"`
 }
 
-func (c LiveApi) EnableMailSNI(domains ...string) (EnableMailSNIAPIResponse, error) {
+func (c CpanelApi) EnableMailSNI(domains ...string) (EnableMailSNIAPIResponse, error) {
 	var out EnableMailSNIAPIResponse
 	err := c.Gateway.UAPI("SSL", "enable_mail_sni", cpanelgo.Args{
 		"domains": strings.Join(domains, "|"),
@@ -170,7 +170,7 @@ type IsMailSNISupportedAPIResponse struct {
 	Data int `json:"data"`
 }
 
-func (c LiveApi) IsMailSNISupported() (IsMailSNISupportedAPIResponse, error) {
+func (c CpanelApi) IsMailSNISupported() (IsMailSNISupportedAPIResponse, error) {
 	var out IsMailSNISupportedAPIResponse
 	err := c.Gateway.UAPI("SSL", "is_mail_sni_supported", cpanelgo.Args{}, &out)
 	if err == nil {
@@ -186,7 +186,7 @@ type RebuildMailSNIConfigAPIResponse struct {
 	}
 }
 
-func (c LiveApi) RebuildMailSNIConfig() (RebuildMailSNIConfigAPIResponse, error) {
+func (c CpanelApi) RebuildMailSNIConfig() (RebuildMailSNIConfigAPIResponse, error) {
 	var out RebuildMailSNIConfigAPIResponse
 	err := c.Gateway.UAPI("SSL", "rebuild_mail_sni_config", cpanelgo.Args{
 		"reload_dovecot": 1,
