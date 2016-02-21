@@ -31,9 +31,13 @@ type InstalledHostsApiResponse struct {
 	cpanelgo.BaseUAPIResponse
 	Data []struct {
 		Certificate struct {
-			Domains    []string `json:"domains"`
-			CommonName string   `json:"subject.commonName"`
+			Domains      []string `json:"domains"`
+			CommonName   string   `json:"subject.commonName"`
+			IsSelfSigned string   `json:"is_self_signed"`
+			Id           string   `json:"id"`
+			NotAfter     string   `json:"not_after"`
 		} `json:"certificate"`
+		CertificateText string `json:"certificate_text"`
 	} `json:"data"`
 }
 
