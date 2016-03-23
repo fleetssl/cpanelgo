@@ -11,6 +11,7 @@ import (
 const (
 	megabyte          = 1 * 1024 * 1024
 	ResponseSizeLimit = (5 * megabyte) + 1337
+	ErrorUnknown = "Unknown"
 )
 
 type BaseResult struct {
@@ -50,16 +51,16 @@ func (r BaseUAPIResponse) Error() error {
 		return err
 	}
 	if len(r.Errors) == 0 {
-		return errors.New("Unknown")
+		return errors.New(ErrorUnknown)
 	}
 	return errors.New(strings.Join(r.Errors, "\n"))
 }
 
-func (r BaseUAPIResponse) Message() error {
+func (r BaseUAPIResponse) Message() string {
 	if r.Messages == nil || len(r.Messages) == 0 {
-		return nil
+		return ""
 	}
-	return errors.New(strings.Join(r.Messages, "\n"))
+	return strings.Join(r.Messages, "\n")
 }
 
 type BaseAPI2Response struct {
