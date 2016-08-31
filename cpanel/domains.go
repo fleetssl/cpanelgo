@@ -1,6 +1,8 @@
 package cpanel
 
 import (
+	"encoding/json"
+
 	"github.com/letsencrypt-cpanel/cpanelgo"
 )
 
@@ -14,6 +16,7 @@ type DomainsDataDomain struct {
 	DocumentRoot string `json:"documentroot"`
 	User         string `json:"user"`
 	ServerAlias  string `json:"serveralias"`
+	ServerName   string `json:"servername"`
 }
 
 type DomainsDataApiResponse struct {
@@ -22,7 +25,8 @@ type DomainsDataApiResponse struct {
 		MainDomain    DomainsDataDomain   `json:"main_domain"`
 		AddonDomains  []DomainsDataDomain `json:"addon_domains"`
 		ParkedDomains []string            `json:"parked_domains"`
-		Subdomains    []DomainsDataDomain `json:"sub_domains"`
+		Sub_Domains   []json.RawMessage   `json:"sub_domains"`
+		Subdomains    []DomainsDataDomain `json:"-"`
 	} `json:"data"`
 }
 
@@ -53,6 +57,16 @@ func (c CpanelApi) DomainsData() (DomainsDataApiResponse, error) {
 	}, &out)
 	if err == nil {
 		err = out.Error()
+	}
+	if err == nil {
+		out.Data.Subdomains = []DomainsDataDomain{}
+		for _, v := range out.Data.Sub_Domains {
+			dec := DomainsDataDomain{}
+			if err := json.Unmarshal(v, &dec); err == nil {
+				out.Data.Subdomains = append(out.Data.Subdomains, dec)
+			}
+		}
+
 	}
 	return out, err
 }

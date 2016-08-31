@@ -11,7 +11,7 @@ import (
 const (
 	megabyte          = 1 * 1024 * 1024
 	ResponseSizeLimit = (5 * megabyte) + 1337
-	ErrorUnknown = "Unknown"
+	ErrorUnknown      = "Unknown"
 )
 
 type BaseResult struct {
@@ -27,7 +27,7 @@ func (r BaseResult) Error() error {
 
 type UAPIResult struct {
 	BaseResult
-	Result     json.RawMessage `json:"result"`
+	Result json.RawMessage `json:"result"`
 }
 
 type API2Result struct {
@@ -114,7 +114,7 @@ func (r BaseAPI1Response) Error() error {
 
 type Args map[string]interface{}
 
-func (a Args) Values(apiVersion string) (url.Values) {
+func (a Args) Values(apiVersion string) url.Values {
 	vals := url.Values{}
 	for k, v := range a {
 		if apiVersion == "1" {

@@ -13,6 +13,14 @@ import (
 	"strconv"
 	"strings"
 
+	"encoding/base64"
+
+	"time"
+
+	"crypto/sha1"
+	"encoding/base32"
+
+	"github.com/JonLundy/Totp.go/totp"
 	"github.com/letsencrypt-cpanel/cpanelgo"
 )
 
@@ -55,10 +63,12 @@ type WhmApi struct {
 	Hostname   string
 	Username   string
 	AccessHash string
+	Password   string
 	Insecure   bool
+	TotpSecret string
 }
 
-func NewWhmApi(hostname, username, accessHash string, insecure bool) WhmApi {
+func NewWhmApiAccessHash(hostname, username, accessHash string, insecure bool) WhmApi {
 	accessHash = strings.Replace(accessHash, "\n", "", -1)
 	accessHash = strings.Replace(accessHash, "\r", "", -1)
 
@@ -70,7 +80,39 @@ func NewWhmApi(hostname, username, accessHash string, insecure bool) WhmApi {
 	}
 }
 
+func NewWhmApiAccessHashTotp(hostname, username, accessHash string, insecure bool, secret string) WhmApi {
+	accessHash = strings.Replace(accessHash, "\n", "", -1)
+	accessHash = strings.Replace(accessHash, "\r", "", -1)
+
+	return WhmApi{
+		Hostname:   hostname,
+		Username:   username,
+		AccessHash: accessHash,
+		Insecure:   insecure,
+		TotpSecret: secret,
+	}
+}
+
+func NewWhmApiPassword(hostname, username, password string, insecure bool) WhmApi {
+	return WhmApi{
+		Hostname: hostname,
+		Username: username,
+		Password: password,
+		Insecure: insecure,
+	}
+}
+
+// Force POST method for these WHM API1 functions
+var forcePost = map[string]bool{
+	"cpanel": true,
+}
+
 func (c *WhmApi) WHMAPI1(function string, arguments cpanelgo.Args, out interface{}) error {
+
+	method := "GET"
+	if _, ok := forcePost[function]; ok {
+		method = "POST"
+	}
 
 	version := "0"
 	if arguments["cpanel_jsonapi_apiversion"] == "1" {
@@ -79,13 +121,34 @@ func (c *WhmApi) WHMAPI1(function string, arguments cpanelgo.Args, out interface
 	vals := arguments.Values(version)
 	vals.Set("api.version", "1")
 
-	reqUrl := fmt.Sprintf("https://%s:2087/json-api/%s?%s", c.Hostname, function, vals.Encode())
-	req, err := http.NewRequest("GET", reqUrl, nil)
-	if err != nil {
-		return err
+	var req *http.Request
+	var reqUrl string
+	var err error
+
+	if method == "GET" {
+		reqUrl = fmt.Sprintf("https://%s:2087/json-api/%s?%s", c.Hostname, function, vals.Encode())
+		req, err = http.NewRequest("GET", reqUrl, nil)
+		if err != nil {
+			return err
+		}
+
+	} else if method == "POST" {
+		reqUrl = fmt.Sprintf("https://%s:2087/json-api/%s", c.Hostname, function)
+		req, err = http.NewRequest("POST", reqUrl, strings.NewReader(vals.Encode()))
 	}
 
-	req.Header.Add("Authorization", fmt.Sprintf("WHM %s:%s", c.Username, c.AccessHash))
+	if c.AccessHash != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("WHM %s:%s", c.Username, c.AccessHash))
+	} else if c.Password != "" {
+		req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", c.Username, c.Password))))
+	}
+
+	if c.TotpSecret != "" {
+		decodedSecret, _ := base32.StdEncoding.DecodeString(c.TotpSecret)
+		otp, _ := totp.Totp(decodedSecret, time.Now().Unix(), sha1.New, 6)
+
+		req.Header.Add("X-CPANEL-OTP", otp)
+	}
 
 	cl := &http.Client{}
 	cl.Transport = &http.Transport{

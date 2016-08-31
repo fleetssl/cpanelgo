@@ -218,7 +218,7 @@ func modeWhm() {
 		log.Fatal("accesshash file was empty")
 	}
 
-	whmcl := whm.NewWhmApi(hostname, username, string(ahBytes), insecure)
+	whmcl := whm.NewWhmApiAccessHash(hostname, username, string(ahBytes), insecure)
 	ifpanic(err)
 
 	var out json.RawMessage

@@ -26,9 +26,15 @@ type AccountSummaryApiResponse struct {
 	BaseWhmApiResponse
 	Data struct {
 		Account []struct {
-			Email string `json:"email"`
+			Email     string `json:"email"`
+			Suspended int    `json:"suspended"`
 		} `json:"acct"`
 	} `json:"data"`
+}
+
+func (r AccountSummaryApiResponse) HasEmail() bool {
+	e := r.Email()
+	return e != "" && e != "*unknown*"
 }
 
 func (r AccountSummaryApiResponse) Email() string {
@@ -38,6 +44,15 @@ func (r AccountSummaryApiResponse) Email() string {
 		}
 	}
 	return ""
+}
+
+func (r AccountSummaryApiResponse) Suspended() bool {
+	for _, v := range r.Data.Account {
+		if v.Suspended != 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func (a WhmApi) AccountSummary(username string) (AccountSummaryApiResponse, error) {

@@ -10,6 +10,9 @@ import (
 	"net"
 	"strings"
 
+	"log"
+	"os"
+
 	"github.com/letsencrypt-cpanel/cpanelgo"
 )
 
@@ -82,6 +85,9 @@ func (c *LiveApiGateway) api(req CpanelApiRequest, out interface{}) error {
 	if err != nil {
 		return err
 	}
+	if os.Getenv("DEBUG_CPANEL_RESPONSES") == "1" {
+		log.Println("[Lets Encrypt for cPanel] Request: ", string(buf))
+	}
 	switch req.ApiVersion {
 	case "uapi":
 		var result cpanelgo.UAPIResult
@@ -92,6 +98,10 @@ func (c *LiveApiGateway) api(req CpanelApiRequest, out interface{}) error {
 		if err != nil {
 			return err
 		}
+
+		if os.Getenv("DEBUG_CPANEL_RESPONSES") == "1" {
+			log.Println("[Lets Encrypt for cPanel] UResult: ", string(result.Result))
+		}
 		return json.Unmarshal(result.Result, out)
 	case "2":
 		var result cpanelgo.API2Result
@@ -101,6 +111,9 @@ func (c *LiveApiGateway) api(req CpanelApiRequest, out interface{}) error {
 		}
 		if err != nil {
 			return err
+		}
+		if os.Getenv("DEBUG_CPANEL_RESPONSES") == "1" {
+			log.Println("[Lets Encrypt for cPanel] 2Result: ", string(result.Result))
 		}
 		return json.Unmarshal(result.Result, out)
 	default:

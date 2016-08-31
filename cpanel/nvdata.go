@@ -25,6 +25,7 @@ type NVDataAccount struct {
 	LastRenewalCheck int64                         `json:"last_renewal_check"`
 	Certs            map[string]*NVDataDomainCerts `json:"certs"`
 	DisableMail      bool                          `json:"disable_mail"`
+	AllowAutoSSL     bool                          `json:"allow_auto_ssl"`
 }
 
 type NVDataGetApiResult struct {
@@ -61,7 +62,6 @@ func (c CpanelApi) GetNVData() (*NVDataAccount, error) {
 
 	return &acct, err
 }
-
 
 func (c CpanelApi) SetNVData(data *NVDataAccount) (cpanelgo.BaseAPI2Response, error) {
 	var out cpanelgo.BaseAPI2Response

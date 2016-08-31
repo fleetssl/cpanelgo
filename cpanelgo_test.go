@@ -1,9 +1,9 @@
 package cpanelgo
 
 import (
-	"testing"
 	"net/url"
 	"reflect"
+	"testing"
 )
 
 func TestArgs_Values(t *testing.T) {

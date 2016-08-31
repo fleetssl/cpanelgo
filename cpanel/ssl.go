@@ -3,9 +3,31 @@ package cpanel
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/letsencrypt-cpanel/cpanelgo"
 )
+
+type CpanelSslCertificate struct {
+	Domains      []string `json:"domains"`
+	CommonName   string   `json:"subject.commonName"`
+	IsSelfSigned string   `json:"is_self_signed"`
+	Id           string   `json:"id"`
+	NotAfter     string   `json:"not_after"`
+	OrgName      string   `json:"issuer.organizationName"`
+}
+
+func (s CpanelSslCertificate) Expiry() time.Time {
+	if s.NotAfter == "" {
+		return time.Unix(0, 0)
+	}
+	cnv, err := strconv.ParseInt(s.NotAfter, 10, 64)
+	if err != nil {
+		return time.Unix(0, 0)
+	}
+
+	return time.Unix(cnv, 0)
+}
 
 type ListSSLKeysAPIResponse struct {
 	cpanelgo.BaseUAPIResponse
@@ -27,18 +49,28 @@ func (c CpanelApi) ListSSLKeys() (ListSSLKeysAPIResponse, error) {
 	return out, err
 }
 
+type ListSSLCertsAPIResponse struct {
+	cpanelgo.BaseUAPIResponse
+	Data []CpanelSslCertificate `json:"data"`
+}
+
+func (c CpanelApi) ListSSLCerts() (ListSSLCertsAPIResponse, error) {
+	var out ListSSLCertsAPIResponse
+	err := c.Gateway.UAPI("SSL", "list_certs", nil, &out)
+	if err == nil {
+		err = out.Error()
+	}
+	return out, err
+}
+
+type InstalledCertificate struct {
+	Certificate     CpanelSslCertificate `json:"certificate"`
+	CertificateText string               `json:"certificate_text"`
+}
+
 type InstalledHostsApiResponse struct {
 	cpanelgo.BaseUAPIResponse
-	Data []struct {
-		Certificate struct {
-			Domains      []string `json:"domains"`
-			CommonName   string   `json:"subject.commonName"`
-			IsSelfSigned string   `json:"is_self_signed"`
-			Id           string   `json:"id"`
-			NotAfter     string   `json:"not_after"`
-		} `json:"certificate"`
-		CertificateText string `json:"certificate_text"`
-	} `json:"data"`
+	Data []InstalledCertificate `json:"data"`
 }
 
 func (r InstalledHostsApiResponse) HasDomain(d string) bool {
@@ -153,8 +185,8 @@ func (c CpanelApi) DeleteKey(certId string) (cpanelgo.BaseUAPIResponse, error) {
 type EnableMailSNIAPIResponse struct {
 	cpanelgo.BaseUAPIResponse
 	Data struct {
-		UpdatedDomains map[string]int `json:"updated_domains"`
-		FailedDomains  map[string]int `json:"failed_domains"`
+		UpdatedDomains map[string]int         `json:"updated_domains"`
+		FailedDomains  map[string]interface{} `json:"failed_domains"`
 	} `json:"data"`
 }
 
@@ -177,6 +209,24 @@ type IsMailSNISupportedAPIResponse struct {
 func (c CpanelApi) IsMailSNISupported() (IsMailSNISupportedAPIResponse, error) {
 	var out IsMailSNISupportedAPIResponse
 	err := c.Gateway.UAPI("SSL", "is_mail_sni_supported", cpanelgo.Args{}, &out)
+	if err == nil {
+		err = out.Error()
+	}
+	return out, err
+}
+
+type MailSNIStatusAPIResponse struct {
+	cpanelgo.BaseUAPIResponse
+	Data struct {
+		Enabled int `json:"enabled"`
+	} `json:"data"`
+}
+
+func (c CpanelApi) MailSNIStatus(domain string) (MailSNIStatusAPIResponse, error) {
+	var out MailSNIStatusAPIResponse
+	err := c.Gateway.UAPI("SSL", "mail_sni_status", cpanelgo.Args{
+		"domain": domain,
+	}, &out)
 	if err == nil {
 		err = out.Error()
 	}

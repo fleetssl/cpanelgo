@@ -30,8 +30,29 @@ func NewWhmImpersonationApi(hostname, username, accessHash, userToImpersonate st
 		})}
 }
 
+func NewWhmImpersonationApiTotp(hostname, username, accessHash, userToImpersonate, secret string, insecure bool) cpanel.CpanelApi {
+	accessHash = strings.Replace(accessHash, "\n", "", -1)
+	accessHash = strings.Replace(accessHash, "\r", "", -1)
+
+	return cpanel.CpanelApi{cpanelgo.NewApi(
+		&WhmImpersonationApi{
+			Impersonate: userToImpersonate,
+			WhmApi: WhmApi{
+				Hostname:   hostname,
+				Username:   username,
+				AccessHash: accessHash,
+				Insecure:   insecure,
+				TotpSecret: secret,
+			},
+		})}
+}
+
 func (c *WhmImpersonationApi) UAPI(module, function string, arguments cpanelgo.Args, out interface{}) error {
+	if arguments == nil {
+		arguments = cpanelgo.Args{}
+	}
 	arguments["user"] = c.Impersonate
+	arguments["cpanel_jsonapi_user"] = c.Impersonate
 	arguments["cpanel_jsonapi_apiversion"] = "3"
 	arguments["cpanel_jsonapi_module"] = module
 	arguments["cpanel_jsonapi_func"] = function
@@ -48,7 +69,11 @@ func (c *WhmImpersonationApi) UAPI(module, function string, arguments cpanelgo.A
 }
 
 func (c *WhmImpersonationApi) API2(module, function string, arguments cpanelgo.Args, out interface{}) error {
+	if arguments == nil {
+		arguments = cpanelgo.Args{}
+	}
 	arguments["user"] = c.Impersonate
+	arguments["cpanel_jsonapi_user"] = c.Impersonate
 	arguments["cpanel_jsonapi_apiversion"] = "2"
 	arguments["cpanel_jsonapi_module"] = module
 	arguments["cpanel_jsonapi_func"] = function
@@ -67,12 +92,13 @@ func (c *WhmImpersonationApi) API2(module, function string, arguments cpanelgo.A
 func (c *WhmImpersonationApi) API1(module, function string, arguments []string, out interface{}) error {
 	args := cpanelgo.Args{}
 	args["user"] = c.Impersonate
+	args["cpanel_jsonapi_user"] = c.Impersonate
 	args["cpanel_jsonapi_apiversion"] = "1"
 	args["cpanel_jsonapi_module"] = module
 	args["cpanel_jsonapi_func"] = function
 
 	if arguments != nil && len(arguments) > 0 {
-		for _,v := range arguments {
+		for _, v := range arguments {
 			args[v] = true
 		}
 	}
