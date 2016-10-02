@@ -26,9 +26,9 @@ type FetchServiceSslComponentsAPIResponse struct {
 			Certificate     string `json:"certificate"`
 			CABundle        string `json:"cabundle"`
 			CertificateInfo struct {
-				IsSelfSigned int      `json:"is_self_signed"`
-				NotAfter     int64    `json:"not_after"`
-				Domains      []string `json:"domains"`
+				IsSelfSigned int                 `json:"is_self_signed"`
+				NotAfter     cpanelgo.MaybeInt64 `json:"not_after"`
+				Domains      []string            `json:"domains"`
 			} `json:"certificate_info"`
 		} `json:"services"`
 	} `json:"data"`

@@ -9,34 +9,26 @@ import (
 )
 
 type CpanelSslCertificate struct {
-	Domains      []string `json:"domains"`
-	CommonName   string   `json:"subject.commonName"`
-	IsSelfSigned string   `json:"is_self_signed"`
-	Id           string   `json:"id"`
-	NotAfter     string   `json:"not_after"`
-	OrgName      string   `json:"issuer.organizationName"`
+	Domains      []string            `json:"domains"`
+	CommonName   string              `json:"subject.commonName"`
+	IsSelfSigned cpanelgo.MaybeInt64 `json:"is_self_signed"`
+	Id           string              `json:"id"`
+	NotAfter     cpanelgo.MaybeInt64 `json:"not_after"`
+	OrgName      string              `json:"issuer.organizationName"`
 }
 
 func (s CpanelSslCertificate) Expiry() time.Time {
-	if s.NotAfter == "" {
-		return time.Unix(0, 0)
-	}
-	cnv, err := strconv.ParseInt(s.NotAfter, 10, 64)
-	if err != nil {
-		return time.Unix(0, 0)
-	}
-
-	return time.Unix(cnv, 0)
+	return time.Unix(int64(s.NotAfter), 0)
 }
 
 type ListSSLKeysAPIResponse struct {
 	cpanelgo.BaseUAPIResponse
 	Data struct {
-		Created       uint64 `json:"created"`
-		Modulus       string `json:"modulus"`
-		Id            string `json:"id"`
-		FriendlyName  string `json:"friendly_name"`
-		ModulusLength int    `json:"modulus_length"`
+		Created       cpanelgo.MaybeInt64 `json:"created"`
+		Modulus       string              `json:"modulus"`
+		Id            string              `json:"id"`
+		FriendlyName  string              `json:"friendly_name"`
+		ModulusLength int                 `json:"modulus_length"`
 	} `json:"data"`
 }
 
@@ -96,12 +88,12 @@ func (c CpanelApi) InstalledHosts() (InstalledHostsApiResponse, error) {
 type GenerateSSLKeyAPIResponse struct {
 	cpanelgo.BaseUAPIResponse
 	Data struct {
-		Created       uint64 `json:"created"`
-		Modulus       string `json:"modulus"`
-		Text          string `json:"text"`
-		Id            string `json:"id"`
-		FriendlyName  string `json:"friendly_name"`
-		ModulusLength int    `json:"modulus_length"`
+		Created       cpanelgo.MaybeInt64 `json:"created"`
+		Modulus       string              `json:"modulus"`
+		Text          string              `json:"text"`
+		Id            string              `json:"id"`
+		FriendlyName  string              `json:"friendly_name"`
+		ModulusLength int                 `json:"modulus_length"`
 	} `json:"data"`
 }
 

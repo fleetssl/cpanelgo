@@ -9,10 +9,10 @@ import (
 type CreateUserSessionApiResponse struct {
 	BaseWhmApiResponse
 	Data struct {
-		SecurityToken string `json:"cp_security_token"`
-		Expires       int64  `json:"expires"`
-		Session       string `json:"session"`
-		Url           string `json:"url"`
+		SecurityToken string              `json:"cp_security_token"`
+		Expires       cpanelgo.MaybeInt64 `json:"expires"`
+		Session       string              `json:"session"`
+		Url           string              `json:"url"`
 	} `json:"data"`
 }
 

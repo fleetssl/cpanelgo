@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -154,4 +155,39 @@ func (a Api) Close() error {
 	} else {
 		return nil
 	}
+}
+
+type MaybeInt64 int64
+
+func (m *MaybeInt64) MarshalJSON() ([]byte, error) {
+	return json.Marshal(int64(*m))
+}
+
+func (m *MaybeInt64) UnmarshalJSON(buf []byte) error {
+	var out interface{}
+	if err := json.Unmarshal(buf, &out); err != nil {
+		return err
+	}
+
+	switch v := out.(type) {
+	case string:
+		if len(v) == 0 {
+			*m = 0
+			break
+		}
+
+		f, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return err
+		}
+		*m = MaybeInt64(f)
+	case float64:
+		*m = MaybeInt64(v)
+	case nil:
+		*m = 0
+	default:
+		return errors.New("Not a string or int64")
+	}
+
+	return nil
 }
