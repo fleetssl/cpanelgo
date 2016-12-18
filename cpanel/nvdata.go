@@ -36,6 +36,14 @@ type NVDataGetApiResult struct {
 	} `json:"data"`
 }
 
+func (a *NVDataAccount) AllNames() []string {
+	out := []string{}
+	for _, v := range a.Certs {
+		out = append(out, append(v.AltNames, v.Domain)...)
+	}
+	return out
+}
+
 func (c CpanelApi) GetNVData() (*NVDataAccount, error) {
 	var out NVDataGetApiResult
 	err := c.Gateway.UAPI("NVData", "get", cpanelgo.Args{

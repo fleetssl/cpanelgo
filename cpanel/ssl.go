@@ -79,6 +79,24 @@ func (r InstalledHostsApiResponse) HasDomain(d string) bool {
 	return false
 }
 
+func (r InstalledHostsApiResponse) HasValidDomain(d string, expiryCutoff time.Time) bool {
+	for _, h := range r.Data {
+		// Ignore self-signed and 'expiring'/expired certificates
+		if h.Certificate.IsSelfSigned == 1 || h.Certificate.Expiry().Before(expiryCutoff) {
+			continue
+		}
+		if strings.ToLower(d) == strings.ToLower(h.Certificate.CommonName) {
+			return true
+		}
+		for _, v := range h.Certificate.Domains {
+			if strings.ToLower(d) == strings.ToLower(v) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (c CpanelApi) InstalledHosts() (InstalledHostsApiResponse, error) {
 	var out InstalledHostsApiResponse
 	err := c.Gateway.UAPI("SSL", "installed_hosts", nil, &out)
