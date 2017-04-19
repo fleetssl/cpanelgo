@@ -6,7 +6,8 @@ type ListAccountsApiResponse struct {
 	BaseWhmApiResponse
 	Data struct {
 		Accounts []struct {
-			User string `json:"user"`
+			User  string `json:"user"`
+			Theme string `json:"theme"`
 		} `json:"acct"`
 	} `json:"data"`
 }
