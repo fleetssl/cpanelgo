@@ -181,10 +181,10 @@ func (c CpanelApi) DeleteCert(certId string) (cpanelgo.BaseUAPIResponse, error) 
 	return out, err
 }
 
-func (c CpanelApi) DeleteKey(certId string) (cpanelgo.BaseUAPIResponse, error) {
+func (c CpanelApi) DeleteKey(keyId string) (cpanelgo.BaseUAPIResponse, error) {
 	var out cpanelgo.BaseUAPIResponse
 	err := c.Gateway.UAPI("SSL", "delete_key", cpanelgo.Args{
-		"id": certId,
+		"id": keyId,
 	}, &out)
 	if err == nil {
 		err = out.Error()
