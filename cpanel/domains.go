@@ -111,3 +111,27 @@ func (c CpanelApi) ListParkedDomains() (ListParkedDomainsApiResponse, error) {
 
 	return out, err
 }
+
+type WebVhostsListDomainsApiResponse struct {
+	cpanelgo.BaseUAPIResponse
+	Data []VhostEntry `json:"data"`
+}
+
+type VhostEntry struct {
+	Domain          string   `json:"domain"`
+	VhostName       string   `json:"vhost_name"`
+	VhostIsSsl      int      `json:"vhost_is_ssl"`
+	ProxySubdomains []string `json:"proxy_subdomains"`
+}
+
+func (c CpanelApi) WebVhostsListDomains() (WebVhostsListDomainsApiResponse, error) {
+	var out WebVhostsListDomainsApiResponse
+
+	err := c.Gateway.UAPI("WebVhosts", "list_domains", cpanelgo.Args{}, &out)
+
+	if err == nil {
+		err = out.Error()
+	}
+
+	return out, err
+}
