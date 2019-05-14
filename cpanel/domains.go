@@ -124,6 +124,31 @@ type VhostEntry struct {
 	ProxySubdomains []string `json:"proxy_subdomains"`
 }
 
+// put them into map for easy access
+func (vhapi WebVhostsListDomainsApiResponse) GetProxySubdomainsMap() map[string][]string {
+	proxyDomainsMap := map[string][]string{}
+	for _, vhd := range vhapi.Data {
+		if len(vhd.ProxySubdomains) > 0 {
+			proxyDomainsMap[vhd.Domain] = vhd.ProxySubdomains
+		}
+	}
+	return proxyDomainsMap
+}
+
+func (r WebVhostsListDomainsApiResponse) GetAllProxySubdomains() []string {
+	m := map[string]struct{}{}
+	for _, d := range r.Data {
+		for _, proxy := range d.ProxySubdomains {
+			m[proxy] = struct{}{}
+		}
+	}
+	res := []string{}
+	for p := range m {
+		res = append(res, p)
+	}
+	return res
+}
+
 func (c CpanelApi) WebVhostsListDomains() (WebVhostsListDomainsApiResponse, error) {
 	var out WebVhostsListDomainsApiResponse
 

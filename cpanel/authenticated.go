@@ -19,6 +19,7 @@ type JsonApiGateway struct {
 	Username string
 	Password string
 	Insecure bool
+	cl       *http.Client
 }
 
 func NewJsonApi(hostname, username, password string, insecure bool) (CpanelApi, error) {
@@ -110,14 +111,19 @@ func (c *JsonApiGateway) api(req CpanelApiRequest, out interface{}) error {
 
 	httpReq.SetBasicAuth(c.Username, c.Password)
 
-	cl := &http.Client{}
-	cl.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: c.Insecure,
-		},
+	if c.cl == nil {
+		c.cl = &http.Client{}
+		c.cl.Transport = &http.Transport{
+			DisableKeepAlives:   true,
+			MaxIdleConns:        1,
+			MaxIdleConnsPerHost: 1,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: c.Insecure,
+			},
+		}
 	}
 
-	resp, err := cl.Do(httpReq)
+	resp, err := c.cl.Do(httpReq)
 	if err != nil {
 		return err
 	}
@@ -128,7 +134,7 @@ func (c *JsonApiGateway) api(req CpanelApiRequest, out interface{}) error {
 	}
 
 	// limit maximum response size
-	lReader := io.LimitReader(resp.Body, cpanelgo.ResponseSizeLimit)
+	lReader := io.LimitReader(resp.Body, int64(cpanelgo.ResponseSizeLimit))
 
 	bytes, err := ioutil.ReadAll(lReader)
 	if err != nil {

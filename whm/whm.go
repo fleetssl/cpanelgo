@@ -1,10 +1,14 @@
 package whm
 
 import (
+	"bytes"
+	"crypto/hmac"
 	"crypto/tls"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash"
 	"io"
 	"io/ioutil"
 	"log"
@@ -20,7 +24,6 @@ import (
 	"crypto/sha1"
 	"encoding/base32"
 
-	"github.com/JonLundy/Totp.go/totp"
 	"github.com/letsencrypt-cpanel/cpanelgo"
 )
 
@@ -66,6 +69,7 @@ type WhmApi struct {
 	Password   string
 	Insecure   bool
 	TotpSecret string
+	cl         *http.Client
 }
 
 func NewWhmApiAccessHash(hostname, username, accessHash string, insecure bool) WhmApi {
@@ -108,6 +112,17 @@ var forcePost = map[string]bool{
 }
 
 func (c *WhmApi) WHMAPI1(function string, arguments cpanelgo.Args, out interface{}) error {
+	if c.cl == nil {
+		c.cl = &http.Client{}
+		c.cl.Transport = &http.Transport{
+			DisableKeepAlives:   true,
+			MaxIdleConns:        1,
+			MaxIdleConnsPerHost: 1,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: c.Insecure,
+			},
+		}
+	}
 
 	method := "GET"
 	if _, ok := forcePost[function]; ok {
@@ -145,19 +160,12 @@ func (c *WhmApi) WHMAPI1(function string, arguments cpanelgo.Args, out interface
 
 	if c.TotpSecret != "" {
 		decodedSecret, _ := base32.StdEncoding.DecodeString(c.TotpSecret)
-		otp, _ := totp.Totp(decodedSecret, time.Now().Unix(), sha1.New, 6)
+		otp, _ := totp(decodedSecret, time.Now().Unix(), sha1.New, 6)
 
 		req.Header.Add("X-CPANEL-OTP", otp)
 	}
 
-	cl := &http.Client{}
-	cl.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: c.Insecure,
-		},
-	}
-
-	resp, err := cl.Do(req)
+	resp, err := c.cl.Do(req)
 	if err != nil {
 		return err
 	}
@@ -168,7 +176,7 @@ func (c *WhmApi) WHMAPI1(function string, arguments cpanelgo.Args, out interface
 	}
 
 	// limit maximum response size
-	lReader := io.LimitReader(resp.Body, cpanelgo.ResponseSizeLimit)
+	lReader := io.LimitReader(resp.Body, int64(cpanelgo.ResponseSizeLimit))
 
 	bytes, err := ioutil.ReadAll(lReader)
 	if err != nil {
@@ -188,4 +196,42 @@ func (c *WhmApi) WHMAPI1(function string, arguments cpanelgo.Args, out interface
 	}
 
 	return json.Unmarshal(bytes, out)
+}
+
+type VersionApiResponse struct {
+	BaseWhmApiResponse
+	Data struct {
+		Version string `json:"version"`
+	} `json:"data"`
+}
+
+func (a WhmApi) Version() (VersionApiResponse, error) {
+	var out VersionApiResponse
+	err := a.WHMAPI1("version", cpanelgo.Args{}, &out)
+	if err == nil && out.Result() != 1 {
+		err = out.Error()
+	}
+	return out, err
+}
+
+func totp(k []byte, t int64, h func() hash.Hash, l int64) (string, error) {
+	if l > 9 || l < 1 {
+		return "", errors.New("Totp: Length out of range.")
+	}
+
+	time := new(bytes.Buffer)
+
+	err := binary.Write(time, binary.BigEndian, (t-int64(0))/int64(30))
+	if err != nil {
+		return "", err
+	}
+
+	hash := hmac.New(h, k)
+	hash.Write(time.Bytes())
+	v := hash.Sum(nil)
+
+	o := v[len(v)-1] & 0xf
+	c := (int32(v[o]&0x7f)<<24 | int32(v[o+1])<<16 | int32(v[o+2])<<8 | int32(v[o+3])) % 1000000000
+
+	return fmt.Sprintf("%010d", c)[10-l : 10], nil
 }

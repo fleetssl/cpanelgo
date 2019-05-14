@@ -6,8 +6,7 @@ type ListAccountsApiResponse struct {
 	BaseWhmApiResponse
 	Data struct {
 		Accounts []struct {
-			User  string `json:"user"`
-			Theme string `json:"theme"`
+			User string `json:"user"`
 		} `json:"acct"`
 	} `json:"data"`
 }
@@ -61,6 +60,26 @@ func (a WhmApi) AccountSummary(username string) (AccountSummaryApiResponse, erro
 
 	err := a.WHMAPI1("accountsummary", cpanelgo.Args{
 		"user": username,
+	}, &out)
+	if err == nil {
+		err = out.Error()
+	}
+
+	return out, err
+}
+
+type ResolveDomainNameApiResponse struct {
+	BaseWhmApiResponse
+	Data struct {
+		IP string `json:"ip"`
+	} `json:"data"`
+}
+
+func (a WhmApi) ResolveDomainName(domain string) (ResolveDomainNameApiResponse, error) {
+	var out ResolveDomainNameApiResponse
+
+	err := a.WHMAPI1("resolvedomainname", cpanelgo.Args{
+		"domain": domain,
 	}, &out)
 	if err == nil {
 		err = out.Error()

@@ -136,6 +136,32 @@ func endsWith(where []byte, what string) bool {
 	return true
 }
 
+func extractJSONString(s string) (string, error) {
+	needles := []string{
+		"<cpanelresult>{",
+		"</error>{",
+		">{",
+	}
+	var found bool
+	for _, needle := range needles {
+		pos := strings.Index(s, needle)
+		if pos == -1 {
+			continue
+		}
+		s = s[pos+len(needle)-1:]
+		found = true
+		break
+	}
+	if !found {
+		return "", fmt.Errorf("Could not find start of JSON in: %s", s)
+	}
+	eof := strings.Index(s, "</cpanelresult>")
+	if eof == -1 {
+		return "", fmt.Errorf("Does not appear to be well-formed: %s", s)
+	}
+	return s[:eof], nil
+}
+
 func (c *LiveApiGateway) exec(req string, out interface{}) error {
 	if _, err := fmt.Fprintf(c, "%d\n%s", len(req), req); err != nil {
 		return err
@@ -162,18 +188,13 @@ func (c *LiveApiGateway) exec(req string, out interface{}) error {
 		return err
 	}
 
-	readStr := read.String()
-
-	if n := strings.Index(readStr, "<cpanelresult>{"); n != -1 {
-		asJson := readStr[strings.Index(readStr, "<cpanelresult>")+14:]
-		asJson = asJson[:strings.LastIndex(asJson, "</cpanelresult>")]
-
-		if out != nil {
-			return json.Unmarshal([]byte(asJson), out)
-		} else {
-			return nil
-		}
+	if out == nil {
+		return nil
 	}
 
-	return fmt.Errorf("Failed to unmarshal LiveAPI response: %v", readStr)
+	asJSON, err := extractJSONString(read.String())
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal([]byte(asJSON), out)
 }

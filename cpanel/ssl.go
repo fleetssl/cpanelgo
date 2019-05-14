@@ -5,16 +5,23 @@ import (
 	"strings"
 	"time"
 
+	"errors"
+	"fmt"
+
+	"crypto/x509"
+	"encoding/pem"
+
 	"github.com/letsencrypt-cpanel/cpanelgo"
 )
 
 type CpanelSslCertificate struct {
-	Domains      []string            `json:"domains"`
-	CommonName   string              `json:"subject.commonName"`
-	IsSelfSigned cpanelgo.MaybeInt64 `json:"is_self_signed"`
-	Id           string              `json:"id"`
-	NotAfter     cpanelgo.MaybeInt64 `json:"not_after"`
-	OrgName      string              `json:"issuer.organizationName"`
+	Domains            []string                       `json:"domains"`
+	CommonName         cpanelgo.MaybeCommonNameString `json:"subject.commonName"`
+	IsSelfSigned       cpanelgo.MaybeInt64            `json:"is_self_signed"`
+	Id                 string                         `json:"id"`
+	NotAfter           cpanelgo.MaybeInt64            `json:"not_after"`
+	OrgName            string                         `json:"issuer.organizationName"`
+	DomainIsConfigured cpanelgo.MaybeInt64            `json:"domain_is_configured"` // Doesn't actually work
 }
 
 func (s CpanelSslCertificate) Expiry() time.Time {
@@ -58,6 +65,7 @@ func (c CpanelApi) ListSSLCerts() (ListSSLCertsAPIResponse, error) {
 type InstalledCertificate struct {
 	Certificate     CpanelSslCertificate `json:"certificate"`
 	CertificateText string               `json:"certificate_text"`
+	FQDNs           []string             `json:"fqdns"`
 }
 
 type InstalledHostsApiResponse struct {
@@ -67,7 +75,7 @@ type InstalledHostsApiResponse struct {
 
 func (r InstalledHostsApiResponse) HasDomain(d string) bool {
 	for _, h := range r.Data {
-		if strings.ToLower(d) == strings.ToLower(h.Certificate.CommonName) {
+		if strings.ToLower(d) == strings.ToLower(string(h.Certificate.CommonName)) {
 			return true
 		}
 		for _, v := range h.Certificate.Domains {
@@ -79,21 +87,83 @@ func (r InstalledHostsApiResponse) HasDomain(d string) bool {
 	return false
 }
 
-func (r InstalledHostsApiResponse) HasValidDomain(d string, expiryCutoff time.Time) bool {
+func (r InstalledHostsApiResponse) HasValidDomain(wanted string, expiryCutoff time.Time) bool {
+	wanted = strings.ToLower(wanted)
+	splitWanted := strings.Split(wanted, ".")
+
+	isDomainCoveredByName := func(name string) bool {
+		name = strings.ToLower(name)
+
+		if wanted == name {
+			return true
+		}
+
+		// Only other way this name can cover the wanted name is if the name is a wildcard
+		if !strings.HasPrefix(name, "*.") {
+			return false
+		}
+
+		// Strip off the first identifier
+		splitName := strings.Split(name, ".")
+
+		if len(splitWanted) < 2 || len(splitName) < 2 {
+			return false
+		}
+
+		// Compare the name without the first identifier (because we know one of them is * already)
+		return strings.Join(splitWanted[1:], ".") == strings.Join(splitName[1:], ".")
+	}
+
 	for _, h := range r.Data {
 		// Ignore self-signed and 'expiring'/expired certificates
 		if h.Certificate.IsSelfSigned == 1 || h.Certificate.Expiry().Before(expiryCutoff) {
 			continue
 		}
-		if strings.ToLower(d) == strings.ToLower(h.Certificate.CommonName) {
+		if isDomainCoveredByName(string(h.Certificate.CommonName)) {
 			return true
 		}
 		for _, v := range h.Certificate.Domains {
-			if strings.ToLower(d) == strings.ToLower(v) {
+			if isDomainCoveredByName(v) {
 				return true
 			}
 		}
 	}
+	return false
+}
+
+// In AutoSSL we want to avoid issuing certificates into virtual hosts that already have
+// a valid certificate installed, whether or not that certificate actually covers `domain`
+func (r InstalledHostsApiResponse) DoesAnyValidCertificateOverlapVhostsWith(domain string, expiryCutoff time.Time) bool {
+	domain = strings.ToLower(domain)
+	split := strings.Split(domain, ".")
+
+	isDomainCoveredByName := func(name string) bool {
+		name = strings.ToLower(name)
+		if domain == name {
+			return true
+		}
+		if !strings.HasPrefix(name, "*.") {
+			return false
+		}
+		splitName := strings.Split(name, ".")
+		if len(split) < 2 || len(splitName) < 2 {
+			return false
+		}
+		return strings.Join(split[1:], ".") == strings.Join(splitName[1:], ".")
+	}
+
+	for _, h := range r.Data {
+		// Intentionally not paying attention to the validity
+		if h.Certificate.IsSelfSigned == 1 || h.Certificate.Expiry().Before(expiryCutoff) {
+			continue
+		}
+		for _, fqdn := range h.FQDNs {
+			if isDomainCoveredByName(fqdn) {
+				return true
+			}
+		}
+	}
+
 	return false
 }
 
@@ -156,7 +226,79 @@ func (c CpanelApi) InstallSSLKey(domain string, cert string, key string, cabundl
 	if err == nil {
 		err = out.Error()
 	}
+
+	// err = errors.New("FAKE unknown error")
+	// out.Data.CertId = ""
+	// out.Data.KeyId = ""
+
+	// unknown error ocsp failing condition
+	// certificate is installed but no certid/keyid returned
+	// attempt to find the certid for installed status
+	// TODO: remove this prior to pushing to github
+	if err != nil && strings.Contains(err.Error(), "unknown error") {
+		// if the api actually returned the cert id proper, we can just ignore the error and continue
+		if out.Data.CertId != "" {
+			err = nil
+			out.Data.Message = fmt.Sprintf("The SSL certificate is now installed onto the domain “%s”", domain)
+			goto DORETURN
+		}
+		// otherwise try to find the installed certid of the given cert
+		installedCertId, findCertErr := c.findExistingCertificate(cert)
+		if findCertErr != nil {
+			err = fmt.Errorf("Error checking installed ssl certificate: %v", findCertErr)
+			goto DORETURN
+		}
+		if installedCertId == "" {
+			err = errors.New("Unable to find installed certificate")
+			goto DORETURN
+		}
+		out.Data.CertId = installedCertId
+		out.Data.Message = fmt.Sprintf("The SSL certificate is now installed onto the domain “%s”", domain)
+		err = nil
+	}
+
+DORETURN:
 	return out, err
+}
+
+// TODO: remove this prior to pushing to github
+func decodeToCert(s string) (*x509.Certificate, error) {
+	b, _ := pem.Decode([]byte(s))
+	if b == nil {
+		return nil, errors.New("Unable to decode pem")
+	}
+
+	cert, err := x509.ParseCertificate(b.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return cert, nil
+}
+
+// TODO: remove this prior to pushing to github
+func (c CpanelApi) findExistingCertificate(certPem string) (string, error) {
+
+	hosts, err := c.InstalledHosts()
+	if err != nil {
+		return "", err
+	}
+
+	cert, err := decodeToCert(certPem)
+	if err != nil {
+		return "", err
+	}
+
+	for _, h := range hosts.Data {
+		c, err := decodeToCert(h.CertificateText)
+		if err == nil {
+			if cert.SerialNumber.Cmp(c.SerialNumber) == 0 {
+				return h.Certificate.Id, nil
+			}
+		}
+	}
+
+	return "", errors.New("Unable to find installed certificate for domain")
 }
 
 func (c CpanelApi) DeleteSSL(domain string) (cpanelgo.BaseUAPIResponse, error) {

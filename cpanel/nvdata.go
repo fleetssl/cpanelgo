@@ -33,18 +33,14 @@ type NVDataSetApiResult struct {
 }
 
 func (c CpanelApi) SetNVData(name string, data interface{}) (NVDataSetApiResult, error) {
-	buf, err := json.Marshal(data)
-	if err != nil {
-		return NVDataSetApiResult{}, err
-	}
-
-	return c.SetNVDataRaw(name, buf)
-}
-
-func (c CpanelApi) SetNVDataRaw(name string, buf []byte) (NVDataSetApiResult, error) {
 	var out NVDataSetApiResult
 
-	err := c.Gateway.UAPI("NVData", "set", cpanelgo.Args{
+	buf, err := json.Marshal(data)
+	if err != nil {
+		return out, err
+	}
+
+	err = c.Gateway.UAPI("NVData", "set", cpanelgo.Args{
 		"names": name,
 		name:    string(buf),
 	}, &out)

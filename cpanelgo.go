@@ -5,15 +5,31 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 )
 
 const (
-	megabyte          = 1 * 1024 * 1024
-	ResponseSizeLimit = (5 * megabyte) + 1337
-	ErrorUnknown      = "Unknown"
+	megabyte     = 1 * 1024 * 1024
+	ErrorUnknown = "Unknown"
 )
+
+var (
+	ResponseSizeLimit = (20 * megabyte) + 1337
+)
+
+func init() {
+	if respSizeLimitOverride := os.Getenv("CPANELGO_RESPONSE_SIZE_LIMIT"); respSizeLimitOverride != "" {
+		conv, err := strconv.Atoi(respSizeLimitOverride)
+		if err != nil {
+			return
+		}
+		if conv >= (5*megabyte)+1337 {
+			ResponseSizeLimit = conv
+		}
+	}
+}
 
 type BaseResult struct {
 	ErrorString string `json:"error"`
@@ -187,6 +203,47 @@ func (m *MaybeInt64) UnmarshalJSON(buf []byte) error {
 		*m = 0
 	default:
 		return errors.New("Not a string or int64")
+	}
+
+	return nil
+}
+
+/*
+	"subject.commonName" : {
+	  "commonName" : "mail.l33t.website"
+	},
+or
+	"subject.commonName" : "mail.l33t.website",
+*/
+type MaybeCommonNameString string
+
+func (m *MaybeCommonNameString) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(*m))
+}
+
+func (m *MaybeCommonNameString) UnmarshalJSON(buf []byte) error {
+	var out interface{}
+	if err := json.Unmarshal(buf, &out); err != nil {
+		return err
+	}
+
+	switch v := out.(type) {
+	case string:
+		*m = MaybeCommonNameString(v)
+	case map[string]interface{}:
+		vv, ok := v["commonName"]
+		if !ok {
+			return errors.New("subject.commonName: no commonName entry")
+		}
+		vvv, ok := vv.(string)
+		if !ok {
+			return errors.New("subject.commonName: commonName entry not a string")
+		}
+		*m = MaybeCommonNameString(vvv)
+	case nil:
+		*m = MaybeCommonNameString("")
+	default:
+		return errors.New("subject.commonName: not a string or map[string]interface{}")
 	}
 
 	return nil
