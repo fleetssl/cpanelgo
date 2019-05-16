@@ -67,7 +67,7 @@ type AddZoneTextRecordResponse struct {
 	} `json:"data"`
 }
 
-func (c CpanelApi) AddZoneTextRecord(zone, name, txtData string) error {
+func (c CpanelApi) AddZoneTextRecord(zone, name, txtData, ttl string) error {
 	var out AddZoneTextRecordResponse
 
 	err := c.Gateway.API2("ZoneEdit", "add_zone_record", cpanelgo.Args{
@@ -75,7 +75,7 @@ func (c CpanelApi) AddZoneTextRecord(zone, name, txtData string) error {
 		"name":    name,
 		"type":    "TXT",
 		"txtdata": txtData,
-		"ttl":     "360",
+		"ttl":     ttl,
 	}, &out)
 
 	if err == nil && out.Event.Result != 1 {
@@ -99,7 +99,7 @@ type EditZoneTextRecordResponse struct {
 	} `json:"data"`
 }
 
-func (c CpanelApi) EditZoneTextRecord(line int, zone, txtData string) error {
+func (c CpanelApi) EditZoneTextRecord(line int, zone, txtData, ttl string) error {
 	var out EditZoneTextRecordResponse
 
 	err := c.Gateway.API2("ZoneEdit", "edit_zone_record", cpanelgo.Args{
@@ -107,7 +107,7 @@ func (c CpanelApi) EditZoneTextRecord(line int, zone, txtData string) error {
 		"type":    "TXT",
 		"txtdata": txtData,
 		"line":    line,
-		"ttl":     360,
+		"ttl":     ttl,
 	}, &out)
 
 	if err == nil && out.Event.Result != 1 {
