@@ -63,8 +63,7 @@ func (r BaseUAPIResponse) Error() error {
 	if r.StatusCode == 1 {
 		return nil
 	}
-	err := r.BaseResult.Error()
-	if err != nil {
+	if err := r.BaseResult.Error(); err != nil {
 		return err
 	}
 	if len(r.Errors) == 0 {

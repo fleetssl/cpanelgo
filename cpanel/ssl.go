@@ -169,8 +169,18 @@ func (r InstalledHostsApiResponse) DoesAnyValidCertificateOverlapVhostsWith(doma
 
 func (c CpanelApi) InstalledHosts() (InstalledHostsApiResponse, error) {
 	var out InstalledHostsApiResponse
-	err := c.Gateway.UAPI("SSL", "installed_hosts", nil, &out)
-	return out, err
+
+	if err := c.Gateway.UAPI("SSL", "installed_hosts", nil, &out); err != nil {
+		return out, err
+	}
+
+	// If there is a non-transport error/warning and we didn't find any SSL
+	// virtual hosts, report this as a fatal error.
+	if err := out.Error(); err != nil && len(out.Data) == 0 {
+		return out, err
+	}
+
+	return out, nil
 }
 
 type GenerateSSLKeyAPIResponse struct {
