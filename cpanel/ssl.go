@@ -87,6 +87,20 @@ func (r InstalledHostsApiResponse) HasDomain(d string) bool {
 	return false
 }
 
+func (r InstalledHostsApiResponse) GetCertificateForDomain(d string) (CpanelSslCertificate, bool) {
+	for _, h := range r.Data {
+		if strings.ToLower(d) == strings.ToLower(string(h.Certificate.CommonName)) {
+			return h.Certificate, true
+		}
+		for _, v := range h.Certificate.Domains {
+			if strings.ToLower(d) == strings.ToLower(v) {
+				return h.Certificate, true
+			}
+		}
+	}
+	return CpanelSslCertificate{}, false
+}
+
 func (r InstalledHostsApiResponse) HasValidDomain(wanted string, expiryCutoff time.Time) bool {
 	wanted = strings.ToLower(wanted)
 	splitWanted := strings.Split(wanted, ".")
@@ -114,17 +128,25 @@ func (r InstalledHostsApiResponse) HasValidDomain(wanted string, expiryCutoff ti
 		return strings.Join(splitWanted[1:], ".") == strings.Join(splitName[1:], ".")
 	}
 
+	hasExactDomain := false
+
 	for _, h := range r.Data {
+		if wanted == strings.ToLower(string(h.Certificate.CommonName)) {
+			hasExactDomain = true
+		}
 		// Ignore self-signed and 'expiring'/expired certificates
 		if h.Certificate.IsSelfSigned == 1 || h.Certificate.Expiry().Before(expiryCutoff) {
 			continue
 		}
 		if isDomainCoveredByName(string(h.Certificate.CommonName)) {
-			return true
+			return !hasExactDomain
 		}
 		for _, v := range h.Certificate.Domains {
+			if wanted == strings.ToLower(v) {
+				hasExactDomain = true
+			}
 			if isDomainCoveredByName(v) {
-				return true
+				return !hasExactDomain
 			}
 		}
 	}
