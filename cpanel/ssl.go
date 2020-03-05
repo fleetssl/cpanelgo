@@ -105,6 +105,19 @@ func (r InstalledHostsApiResponse) HasValidDomain(wanted string, expiryCutoff ti
 	wanted = strings.ToLower(wanted)
 	splitWanted := strings.Split(wanted, ".")
 
+	// first determine if there is an exact match for the domain available
+	hasExactDomain := false
+	for _, h := range r.Data {
+		if wanted == strings.ToLower(string(h.Certificate.CommonName)) {
+			hasExactDomain = true
+		}
+		for _, v := range h.Certificate.Domains {
+			if wanted == strings.ToLower(v) {
+				hasExactDomain = true
+			}
+		}
+	}
+
 	isDomainCoveredByName := func(name string) bool {
 		name = strings.ToLower(name)
 
@@ -113,7 +126,7 @@ func (r InstalledHostsApiResponse) HasValidDomain(wanted string, expiryCutoff ti
 		}
 
 		// Only other way this name can cover the wanted name is if the name is a wildcard
-		if !strings.HasPrefix(name, "*.") {
+		if hasExactDomain || !strings.HasPrefix(name, "*.") {
 			return false
 		}
 
@@ -128,25 +141,17 @@ func (r InstalledHostsApiResponse) HasValidDomain(wanted string, expiryCutoff ti
 		return strings.Join(splitWanted[1:], ".") == strings.Join(splitName[1:], ".")
 	}
 
-	hasExactDomain := false
-
 	for _, h := range r.Data {
-		if wanted == strings.ToLower(string(h.Certificate.CommonName)) {
-			hasExactDomain = true
-		}
 		// Ignore self-signed and 'expiring'/expired certificates
 		if h.Certificate.IsSelfSigned == 1 || h.Certificate.Expiry().Before(expiryCutoff) {
 			continue
 		}
 		if isDomainCoveredByName(string(h.Certificate.CommonName)) {
-			return !hasExactDomain
+			return true
 		}
 		for _, v := range h.Certificate.Domains {
-			if wanted == strings.ToLower(v) {
-				hasExactDomain = true
-			}
 			if isDomainCoveredByName(v) {
-				return !hasExactDomain
+				return true
 			}
 		}
 	}
