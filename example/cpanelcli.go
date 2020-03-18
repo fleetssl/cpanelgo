@@ -204,7 +204,7 @@ func api(cl cpanel.CpanelApi) {
 		ifpanic(response.Error())
 		fmt.Printf("%+v", response)
 	default:
-		log.Fatal("Unknown version: %q, expected uapi, 2 or 1", version)
+		log.Fatalf("Unknown version: %q, expected uapi, 2 or 1", version)
 	}
 }
 
