@@ -7,40 +7,30 @@ import (
 	"github.com/letsencrypt-cpanel/cpanelgo"
 )
 
+const (
+	d_Feb_16_2020   = 1581811200
+	d_March_16_2020 = 1584316800
+	d_May_17_2020   = 1589673600
+)
+
+func installedCert(cn string, sans []string, notAfter int64) InstalledCertificate {
+	return InstalledCertificate{
+		Certificate: CpanelSslCertificate{
+			IsSelfSigned: cpanelgo.MaybeInt64(0),
+			CommonName:   cpanelgo.MaybeCommonNameString(cn),
+			Domains:      sans,
+			NotAfter:     cpanelgo.MaybeInt64(notAfter),
+		},
+	}
+}
+
 func TestWildcardDoesntClobberOtherCertificates(t *testing.T) {
-	cutoff := time.Unix(1581811200, 0).Add(time.Duration(31) * 24 * time.Hour)
+	cutoff := time.Unix(d_Feb_16_2020, 0).Add(time.Duration(31) * 24 * time.Hour)
 	data := []InstalledCertificate{
-		{
-			Certificate: CpanelSslCertificate{
-				IsSelfSigned: cpanelgo.MaybeInt64(0),
-				CommonName:   cpanelgo.MaybeCommonNameString("home.example.com"),
-				Domains:      []string{"home.example.com"},
-				NotAfter:     cpanelgo.MaybeInt64(1584316800),
-			},
-		},
-		{
-			Certificate: CpanelSslCertificate{
-				IsSelfSigned: cpanelgo.MaybeInt64(0),
-				CommonName:   cpanelgo.MaybeCommonNameString("node.example.com"),
-				Domains:      []string{"node.example.com"},
-				NotAfter:     cpanelgo.MaybeInt64(1584316800),
-			},
-		},
-		{
-			Certificate: CpanelSslCertificate{
-				IsSelfSigned: cpanelgo.MaybeInt64(0),
-				CommonName:   cpanelgo.MaybeCommonNameString("example.com"),
-				Domains:      []string{"example.com", "*.example.com"},
-				NotAfter:     cpanelgo.MaybeInt64(1589673600),
-			},
-		},
-		{
-			Certificate: CpanelSslCertificate{
-				IsSelfSigned: cpanelgo.MaybeInt64(0),
-				CommonName:   cpanelgo.MaybeCommonNameString("fake.test.com"),
-				NotAfter:     cpanelgo.MaybeInt64(1589673600),
-			},
-		},
+		installedCert("home.example.com", []string{"home.example.com"}, d_March_16_2020),
+		installedCert("node.example.com", []string{"node.example.com"}, d_March_16_2020),
+		installedCert("example.com", []string{"example.com", "*.example.com"}, d_May_17_2020),
+		installedCert("fake.test.com", nil, d_May_17_2020),
 	}
 
 	tests := []struct {
@@ -49,34 +39,46 @@ func TestWildcardDoesntClobberOtherCertificates(t *testing.T) {
 		cutoff  time.Time
 		result  bool
 	}{
+		// node.example.com is expiring
 		{
 			apiResp: InstalledHostsApiResponse{Data: data},
 			domain:  "node.example.com",
 			cutoff:  cutoff,
 			result:  false,
 		},
+		// node.example.com is expiring
 		{
 			apiResp: InstalledHostsApiResponse{Data: []InstalledCertificate{data[2], data[1]}},
 			domain:  "node.example.com",
 			cutoff:  cutoff,
 			result:  false,
 		},
+		// home.example.com is expiring
 		{
 			apiResp: InstalledHostsApiResponse{Data: data},
 			domain:  "home.example.com",
 			cutoff:  cutoff,
 			result:  false,
 		},
+		// fake.test.com exists and is not expiring
 		{
 			apiResp: InstalledHostsApiResponse{Data: data},
 			domain:  "fake.test.com",
 			cutoff:  cutoff,
 			result:  true,
 		},
+		// example.com exists and is not expiring
 		{
 			apiResp: InstalledHostsApiResponse{Data: data},
 			domain:  "example.com",
 			cutoff:  cutoff,
+			result:  true,
+		},
+		// node.example.com exists and is not expiring @ cutoff of d_March_16_2020
+		{
+			apiResp: InstalledHostsApiResponse{Data: data},
+			domain:  "node.example.com",
+			cutoff:  time.Unix(d_March_16_2020, 0),
 			result:  true,
 		},
 	}
