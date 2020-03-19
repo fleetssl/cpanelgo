@@ -31,6 +31,7 @@ func TestWildcardDoesntClobberOtherCertificates(t *testing.T) {
 		installedCert("node.example.com", []string{"node.example.com"}, d_March_16_2020),
 		installedCert("example.com", []string{"example.com", "*.example.com"}, d_May_17_2020),
 		installedCert("fake.test.com", nil, d_May_17_2020),
+		installedCert("*.test.com", nil, d_March_16_2020),
 	}
 
 	tests := []struct {
@@ -78,6 +79,20 @@ func TestWildcardDoesntClobberOtherCertificates(t *testing.T) {
 		{
 			apiResp: InstalledHostsApiResponse{Data: data},
 			domain:  "node.example.com",
+			cutoff:  time.Unix(d_March_16_2020, 0),
+			result:  true,
+		},
+		// *.test.com exists and is expiring
+		{
+			apiResp: InstalledHostsApiResponse{Data: data},
+			domain:  "*.test.com",
+			cutoff:  cutoff,
+			result:  false,
+		},
+		// *.test.com exists and is not expiring
+		{
+			apiResp: InstalledHostsApiResponse{Data: data},
+			domain:  "*.test.com",
 			cutoff:  time.Unix(d_March_16_2020, 0),
 			result:  true,
 		},
