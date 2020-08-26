@@ -1,6 +1,7 @@
 package whm
 
 import (
+	"net/http"
 	"strings"
 
 	"encoding/json"
@@ -26,6 +27,23 @@ func NewWhmImpersonationApi(hostname, username, accessHash, userToImpersonate st
 				Username:   username,
 				AccessHash: accessHash,
 				Insecure:   insecure,
+			},
+		})}
+}
+
+func NewWhmImpersonationApiWithClient(hostname, username, accessHash, userToImpersonate string, insecure bool, cl *http.Client) cpanel.CpanelApi {
+	accessHash = strings.Replace(accessHash, "\n", "", -1)
+	accessHash = strings.Replace(accessHash, "\r", "", -1)
+
+	return cpanel.CpanelApi{cpanelgo.NewApi(
+		&WhmImpersonationApi{
+			Impersonate: userToImpersonate,
+			WhmApi: WhmApi{
+				Hostname:   hostname,
+				Username:   username,
+				AccessHash: accessHash,
+				Insecure:   insecure,
+				cl:         cl,
 			},
 		})}
 }
