@@ -84,6 +84,19 @@ func NewWhmApiAccessHash(hostname, username, accessHash string, insecure bool) W
 	}
 }
 
+func NewWhmApiAccessHashWithClient(hostname, username, accessHash string, insecure bool, cl *http.Client) WhmApi {
+	accessHash = strings.Replace(accessHash, "\n", "", -1)
+	accessHash = strings.Replace(accessHash, "\r", "", -1)
+
+	return WhmApi{
+		Hostname:   hostname,
+		Username:   username,
+		AccessHash: accessHash,
+		Insecure:   insecure,
+		cl:         cl,
+	}
+}
+
 func NewWhmApiAccessHashTotp(hostname, username, accessHash string, insecure bool, secret string) WhmApi {
 	accessHash = strings.Replace(accessHash, "\n", "", -1)
 	accessHash = strings.Replace(accessHash, "\r", "", -1)

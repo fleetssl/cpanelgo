@@ -29,6 +29,20 @@ func NewJsonApi(hostname, username, password string, insecure bool) (CpanelApi, 
 		Password: password,
 		Insecure: insecure,
 	}
+
+	// todo: a way to check the username/password here
+	return CpanelApi{cpanelgo.NewApi(c)}, nil
+}
+
+func NewJsonApiWithClient(hostname, username, password string, insecure bool, cl *http.Client) (CpanelApi, error) {
+	c := &JsonApiGateway{
+		Hostname: hostname,
+		Username: username,
+		Password: password,
+		Insecure: insecure,
+		cl:       cl,
+	}
+
 	// todo: a way to check the username/password here
 	return CpanelApi{cpanelgo.NewApi(c)}, nil
 }
