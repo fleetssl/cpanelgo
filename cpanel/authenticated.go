@@ -40,10 +40,7 @@ func NewJsonApiWithClient(hostname, username, password string, insecure bool, cl
 		Username: username,
 		Password: password,
 		Insecure: insecure,
-	}
-
-	if cl != nil {
-		c.cl = cl
+		cl:       cl,
 	}
 
 	// todo: a way to check the username/password here

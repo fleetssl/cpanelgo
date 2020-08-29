@@ -130,7 +130,7 @@ func modeCpanel() {
 	required(password, "Please specify a password")
 	required(version, "Please specify an api version")
 
-	cl, err := cpanel.NewJsonApi(hostname, username, password, insecure, nil)
+	cl, err := cpanel.NewJsonApi(hostname, username, password, insecure)
 	ifpanic(err)
 
 	/*
