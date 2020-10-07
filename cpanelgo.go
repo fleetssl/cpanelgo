@@ -232,7 +232,8 @@ func (m *MaybeCommonNameString) UnmarshalJSON(buf []byte) error {
 	case map[string]interface{}:
 		vv, ok := v["commonName"]
 		if !ok {
-			return errors.New("subject.commonName: no commonName entry")
+			*m = ""
+			return nil
 		}
 		vvv, ok := vv.(string)
 		if !ok {
@@ -240,7 +241,7 @@ func (m *MaybeCommonNameString) UnmarshalJSON(buf []byte) error {
 		}
 		*m = MaybeCommonNameString(vvv)
 	case nil:
-		*m = MaybeCommonNameString("")
+		*m = ""
 	default:
 		return errors.New("subject.commonName: not a string or map[string]interface{}")
 	}
